@@ -3,7 +3,8 @@ const {
   printReceived,
   printExpected,
 } = require('jest-matcher-utils')
-const { styleSheet } = require('styled-components')
+const styleSheet = require('styled-components/lib/models/StyleSheet')
+const { getCSS } = require('../utils')
 
 /**
  * Finds the generated class name from a rendered StyledComponent.
@@ -16,9 +17,9 @@ const findClassName = (received) => {
   const component = received.component || received
 
   // constructor.name doesnt work in older versions of node
-  if (component.constructor && typeof component.toJSON === 'function') {
+  if (component.$$typeof === Symbol.for('react.test.json')) {
     // react test renderer
-    className = component.toJSON().props.className
+    className = component.props.className
   } else if (received.node) {
     // enzyme
     const renderedComponent = received.node._reactInternalInstance._renderedComponent
@@ -46,7 +47,7 @@ const findClassName = (received) => {
 const toHaveStyleRule = (received, selector, value) => {
   try {
     const className = findClassName(received)
-    const css = styleSheet.styleSheet.tags[0].innerHTML
+    const css = getCSS(styleSheet)
     const styles = new RegExp(`${className} {([^}]*)`, 'g').exec(css)
     const capture = new RegExp(`${selector}:[\s]*([^;]+)`, 'g')
 
@@ -75,7 +76,7 @@ const toHaveStyleRule = (received, selector, value) => {
     return { // Failed -- wrong value
       message: () => (`
         ${printExpected(`Expected ${className} to have ${selector} matching ${value}`)}\n
-        ${printReceived(`But received, ${styles || css}`)}
+        ${printReceived(`But received, ${styles[1] || css}`)}
       `),
       pass: false,
     }

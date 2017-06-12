@@ -1,7 +1,7 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
 import styled from 'styled-components'
-import { shallow } from 'enzyme'
+import { shallow, mount } from 'enzyme'
 import '../src'
 
 const Wrapper = styled.section`
@@ -27,22 +27,42 @@ const Title = styled.h1`
   }
 `
 
-test('react-test-renderer', () => {
-  const tree = renderer.create(
-    <Wrapper>
-      <Title>Hello World, this is my first styled component!</Title>
-    </Wrapper>,
-  ).toJSON()
+describe('toMatchSnapshot', () => {
+  test('null', () => {
+    expect(null).toMatchSnapshot()
+  })
 
-  expect(tree).toMatchStyledComponentsSnapshot()
+  test('test-renderer', () => {
+    const tree = renderer.create(
+      <Wrapper>
+        <Title>Hello World, this is my first styled component!</Title>
+      </Wrapper>,
+    ).toJSON()
+
+    expect(tree).toMatchStyledComponentsSnapshot()
+  })
+
+  test('shallow', () => {
+    const tree = shallow(
+      <Wrapper>
+        <Title>Hello World, this is my first styled component!</Title>
+      </Wrapper>,
+    )
+
+    expect(tree).toMatchStyledComponentsSnapshot()
+  })
 })
 
-test('enzyme', () => {
-  const tree = shallow(
-    <Wrapper>
-      <Title>Hello World, this is my first styled component!</Title>
-    </Wrapper>,
-  )
+describe('toHaveStyleRule', () => {
+  test('test-renderer', () => {
+    const tree = renderer.create(<Wrapper />).toJSON()
 
-  expect(tree).toMatchStyledComponentsSnapshot()
+    expect(tree).toHaveStyleRule('background', 'papayawhip')
+  })
+
+  test('mount', () => {
+    const tree = mount(<Wrapper />)
+
+    expect(tree).toHaveStyleRule('background', 'papayawhip')
+  })
 })

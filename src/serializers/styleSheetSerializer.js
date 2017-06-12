@@ -1,5 +1,6 @@
 const css = require('css')
 const styleSheet = require('styled-components/lib/models/StyleSheet')
+const { getCSS } = require('../utils')
 
 const getClassNames = (node, classNames) => {
   if (node.children && node.children.reduce) {
@@ -18,7 +19,7 @@ const getClassNames = (node, classNames) => {
 const filterNodes = classNames => (rule) => {
   if (rule.type === 'rule') {
     const className = rule.selectors[0].split(/:| /)[0]
-    return classNames.includes(className.substring(1))
+    return classNames.includes(className.substring(1)) && rule.declarations.length
   }
 
   return false
@@ -39,7 +40,7 @@ const getMediaQueries = (ast, filter) => (
 )
 
 const getStyles = (classNames) => {
-  const styles = styleSheet.rules().map(rule => rule.cssText).join('\n')
+  const styles = getCSS(styleSheet)
   const ast = css.parse(styles)
   const filter = filterNodes(classNames)
   const rules = ast.stylesheet.rules.filter(filter)
@@ -47,22 +48,22 @@ const getStyles = (classNames) => {
 
   ast.stylesheet.rules = rules.concat(mediaQueries)
 
-  return css.stringify(ast)
+  return css.stringify(ast).trim()
 }
 
 const styleSheetSerializer = {
 
   test(val) {
-    return !val.withStyles && val.$$typeof === Symbol.for('react.test.json')
+    return val && !val.withStyles && val.$$typeof === Symbol.for('react.test.json')
   },
 
   print(val, print) {
     const classNames = getClassNames(val, [])
-    const styles = getStyles(classNames)
+    const styles = classNames.length ? `${getStyles(classNames)}\n\n` : ''
 
     val.withStyles = true
 
-    return `${styles}\n\n${print(val)}`
+    return `${styles}${print(val)}`
   },
 
 }
